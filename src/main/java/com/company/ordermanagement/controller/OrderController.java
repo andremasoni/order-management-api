@@ -2,17 +2,20 @@ package com.company.ordermanagement.controller;
 
 import com.company.ordermanagement.dto.CreateOrderRequest;
 import com.company.ordermanagement.dto.OrderResponse;
+import com.company.ordermanagement.dto.PageResponse;
 import com.company.ordermanagement.dto.UpdateStatusRequest;
 import com.company.ordermanagement.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -36,9 +39,11 @@ public class OrderController {
     }
 
     @GetMapping
-    @Operation(summary = "List all orders")
-    public ResponseEntity<List<OrderResponse>> listAll() {
-        return ResponseEntity.ok(orderService.listOrders());
+    @Operation(summary = "List orders, newest first")
+    public ResponseEntity<PageResponse<OrderResponse>> list(
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
+            Pageable pageable) {
+        return ResponseEntity.ok(orderService.listOrders(pageable));
     }
 
     @PutMapping("/{id}/status")

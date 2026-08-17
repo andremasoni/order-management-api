@@ -2,6 +2,7 @@ package com.company.ordermanagement.service;
 
 import com.company.ordermanagement.dto.CreateOrderRequest;
 import com.company.ordermanagement.dto.OrderResponse;
+import com.company.ordermanagement.dto.PageResponse;
 import com.company.ordermanagement.entity.Order;
 import com.company.ordermanagement.entity.OrderStatus;
 import com.company.ordermanagement.exception.InvalidStatusTransitionException;
@@ -9,11 +10,11 @@ import com.company.ordermanagement.exception.OrderNotFoundException;
 import com.company.ordermanagement.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.EnumMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -50,19 +51,20 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public List<OrderResponse> listOrders() {
-        return orderRepository.findAll().stream()
-                .map(OrderResponse::from)
-                .toList();
+    public PageResponse<OrderResponse> listOrders(Pageable pageable) {
+        return PageResponse.from(orderRepository.findAll(pageable), OrderResponse::from);
     }
 
     @Transactional
     public OrderResponse updateStatus(UUID id, OrderStatus newStatus) {
         Order order = findOrThrow(id);
-        validateTransition(order.getStatus(), newStatus);
+        OrderStatus currentStatus = order.getStatus();
+
+        validateTransition(currentStatus, newStatus);
         order.setStatus(newStatus);
         Order updated = orderRepository.save(order);
-        log.info("Order {} status updated: {} -> {}", id, order.getStatus(), newStatus);
+
+        log.info("Order {} status updated: {} -> {}", id, currentStatus, newStatus);
         return OrderResponse.from(updated);
     }
 
